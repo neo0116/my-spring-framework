@@ -10,7 +10,7 @@ public abstract class AbstractBeanFactory extends DefaultSingltonBeanRegistry im
     }
 
     private Object doGetBean(String beanName) {
-        //创建
+        //创建，singltonObjects中有就直接取，否则会调用createBean方法，供给型函数式接口
         return getSingleton(beanName, () -> {
             return createBean(beanName, (DefaultListableBeanFactory) this);
         });
