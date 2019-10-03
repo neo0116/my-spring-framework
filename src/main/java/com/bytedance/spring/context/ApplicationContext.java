@@ -27,7 +27,7 @@ public class ApplicationContext extends AbstractApplicationContext implements Be
         //1.定位配置文件
         BeanDefinitionReader reader = resourceLoader(this.configLocations);
         //2.读取配置文件
-        reader.loadBeanDefinitions();
+        reader.loadBeanDefinitions(reader);
         //3.加载配置文件到BeanDefinition集合中
         reader.registBeanDefinitions();
         //4.非懒加载bean注入IOC中

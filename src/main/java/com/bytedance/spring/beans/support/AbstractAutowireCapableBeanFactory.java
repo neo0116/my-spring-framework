@@ -1,7 +1,9 @@
 package com.bytedance.spring.beans.support;
 
+import com.bytedance.spring.aop.*;
 import com.bytedance.spring.beans.BeanWrapper;
 import com.bytedance.spring.beans.config.BeanDefinition;
+import com.bytedance.spring.beans.config.BeanDefinitionReader;
 import com.bytedance.spring.context.annotation.BDAutowired;
 import com.bytedance.spring.context.annotation.BDController;
 import com.bytedance.spring.context.annotation.BDService;
@@ -17,6 +19,8 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 
     private final ConcurrentMap<String, Class<?>> relevanceClass = new ConcurrentHashMap<>();
 
+    private BeanDefinitionReader reader;
+
     @Override
     public Object createBean(String beanName, DefaultListableBeanFactory defaultListableBeanFactory) {
         return doCreateBean(beanName, defaultListableBeanFactory);
@@ -30,7 +34,7 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
         Object bean = beanWrapper.getWrappedInstance();
         Object exposedObject = bean;
         //AOP
-        exposedObject = initializeBean(beanName, exposedObject, new BeanDefinition());
+        exposedObject = initializeBean(beanName, exposedObject, defaultListableBeanFactory.beanDefinitionMap.get(beanName));
         return exposedObject;
     }
 
@@ -42,6 +46,15 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
             if (null == instance) {
                 Class<?> clazz = Class.forName(beanClassName);
                 wrappedInstance = clazz.newInstance();
+
+                AdvisedSupport advised = initializeAopConfig();
+                advised.setTarget(wrappedInstance);
+                advised.setTargetClass(clazz);
+                //是否匹配切入点表达式？
+                if(advised.pointCutMatch()) {
+                    wrappedInstance = createProxy(advised).getProxy();
+                }
+
             } else {
                 wrappedInstance = instance;
             }
@@ -51,6 +64,25 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
         BeanWrapper beanWrapper = new BeanWrapper(wrappedInstance);
         this.factoryBeanInstanceCache.put(beanName, beanWrapper);
         return beanWrapper;
+    }
+
+    private AopProxy createProxy(AdvisedSupport advised) {
+        Class<?>[] interfaces = advised.getTargetClass().getInterfaces();
+        if (interfaces.length != 0) {
+            return new JdkDynamicAopProxy(advised);
+        }
+        return new CglibAopProxy(advised);
+    }
+
+    private AdvisedSupport initializeAopConfig() {
+        AopConfig aopConfig = new AopConfig();
+        aopConfig.setPointCut(this.reader.getProperties().getProperty("pointCut"));
+        aopConfig.setAspectClass(this.reader.getProperties().getProperty("aspectClass"));
+        aopConfig.setAspectBefore(this.reader.getProperties().getProperty("aspectBefore"));
+        aopConfig.setAspectAfter(this.reader.getProperties().getProperty("aspectAfter"));
+        aopConfig.setAspectAfterThrowing(this.reader.getProperties().getProperty("aspectAfterThrowing"));
+        aopConfig.setThrowName(this.reader.getProperties().getProperty("ThrowName"));
+        return new AdvisedSupport(aopConfig);
     }
 
     private void populateBean(String beanName, BeanDefinition beanDefinition, BeanWrapper beanWrapper) {
@@ -86,6 +118,9 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
     }
 
     private Object initializeBean(String beanName, Object exposedObject, BeanDefinition beanDefinition) {
+
+
+
         return exposedObject;
     }
 
@@ -93,5 +128,13 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
         char[] chars = className.toCharArray();
         chars[0] += 32;
         return String.valueOf(chars);
+    }
+
+    public BeanDefinitionReader getReader() {
+        return reader;
+    }
+
+    public void setReader(BeanDefinitionReader reader) {
+        this.reader = reader;
     }
 }

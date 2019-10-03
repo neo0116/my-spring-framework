@@ -60,8 +60,11 @@ public class BeanDefinitionReader {
         }
     }
 
-    public void loadBeanDefinitions() {
-        List<BeanDefinition> beanDefinitions = ((DefaultListableBeanFactory) registry).beanDefinitions;
+    public void loadBeanDefinitions(BeanDefinitionReader reader) {
+        DefaultListableBeanFactory registry = (DefaultListableBeanFactory) this.registry;
+        registry.setReader(reader);
+
+        List<BeanDefinition> beanDefinitions = registry.beanDefinitions;
         for (String classLocation : classLocations) {
             try {
                 Class<?> clazz = Class.forName(classLocation);
