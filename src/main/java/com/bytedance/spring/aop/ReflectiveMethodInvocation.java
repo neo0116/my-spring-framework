@@ -19,6 +19,7 @@ public class ReflectiveMethodInvocation implements MethodInvocation {
 
     private List<Object> interceptorsAndDynamicMethodMatchers;
 
+    //当前拦截器执行的位置
     private int currentInterceptorIndex = -1;
 
     protected ReflectiveMethodInvocation(
@@ -41,7 +42,7 @@ public class ReflectiveMethodInvocation implements MethodInvocation {
 
         Object interceptorOrInterceptionAdvice =
                 this.interceptorsAndDynamicMethodMatchers.get(++this.currentInterceptorIndex);
-        //如果要动态匹配joinPoint
+        //如果要动态匹配joinPoint，就实现JoinPoint接口
         if (interceptorOrInterceptionAdvice instanceof MethodInterceptor) {
             MethodInterceptor mi =
                     (MethodInterceptor) interceptorOrInterceptionAdvice;
