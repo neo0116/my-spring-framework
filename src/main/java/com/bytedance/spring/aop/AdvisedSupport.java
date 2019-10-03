@@ -57,7 +57,7 @@ public class AdvisedSupport {
 
     private void initPattern() {
         //类匹配
-        //public .* com.bytedance.myservice.service..*ServiceImpl..*(.*)
+        //public .* com.bytedance.myservice.service..*Service..*(.*)
         String pointCut = this.config.getPointCut();
         String pointCutReplace = pointCut
                 .replaceAll("\\.","\\\\.")
